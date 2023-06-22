@@ -1343,8 +1343,9 @@
 	<X11/Xatom.h>
 	<X11/extensions/shape.h>
 
-1686432452 source:/home/pacman/OPENRA_MAP_RESIZER/src/functions.cpp
+1687368851 source:/home/pacman/OPENRA_MAP_RESIZER/src/functions.cpp
 	<functions.hpp>
+	<math.h>
 	<SFML/System/Thread.hpp>
 	<SFML/Graphics.hpp>
 	<SFML/Graphics/Sprite.hpp>

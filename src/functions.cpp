@@ -1,4 +1,5 @@
 #include <functions.hpp>
+#include <math.h>
 
 #include <SFML/System/Thread.hpp>
 #include <SFML/Graphics.hpp>
@@ -13,8 +14,13 @@ bool border_check(sf::Image &m_image, int xx, int yy) {
     for (int y = yy - 5; y <= yy + 5; y++ ) {
         for (int x = xx - 5; x <= xx + 5; x++ ) {
             if ( y>=0 && y<y_max && x>=0 && x<x_max ) {
-                sf::Color pixel = m_image.getPixel( x, y );
-                if ( pixel.a == 0) return false;
+                if ( sqrt( (x-xx) * (x-xx) + (y-yy) * (y-yy) ) < 4.0) {
+                    sf::Color pixel = m_image.getPixel( x, y );
+//                    if (pixel.a != 0 ) return false;
+                    int avg = (pixel.r + pixel.g + pixel.b ) / 3;
+                    if (avg < 128 && pixel.a >= 128) return false;
+                }
+//                if ( pixel.a == 0) return false;
             }
         }
     }
@@ -26,7 +32,7 @@ int picture_bin( unsigned char* bin, long size ) {
     uint16_t size_y = *(uint16_t*)(bin + 3);
 
     sf::Image m_image;
-    if ( m_image.loadFromFile("world3.png") ) {
+    if ( m_image.loadFromFile("world15.png") ) {
         uint16_t* val1a_ptr;
         uint8_t*  val1b_ptr;
         uint16_t* val2_ptr;
@@ -60,7 +66,7 @@ int picture_bin( unsigned char* bin, long size ) {
 //        uint16_t* first_a_ptr =    (uint16_t*) ( bin + 17       );
 //        uint8_t*  first_b_ptr =    (uint8_t*)  ( bin + 17 + 2   );
         int actor = 0;
-        sf::Color pixel;
+        sf::Color pixel, pixel_left, pixel_up, pixel_left_up;
         for (unsigned int yy = 0; yy < max_y; yy++ ) {
             for (unsigned int xx = 0; xx < max_x; xx++ ) {
 
@@ -78,15 +84,101 @@ int picture_bin( unsigned char* bin, long size ) {
 
 //                val2  = (int16_t) ( *( (uint16_t*) ( bin + 17 + ( size_x * size_y ) * 3  + offset*3  )  ) );
 
-
+                bool left;
+                bool up;
+                bool left_up;
 
                 pixel = m_image.getPixel( xx, yy );
-                int avg = (pixel.r + pixel.g + pixel.b ) / 3;
-                if (pixel.r == 255 && pixel.g < 200 && pixel.b < 200) {
-                    *val2_ptr =  0x0302;
+                if ( pixel.a != 0 ) {
 
-                } else if ( avg < 128 ) {
-                    *val2_ptr =  0x0c01;
+                    if ( xx > 0) {
+                        int avg_left = 0;
+                        pixel_left = m_image.getPixel( xx-1, yy );
+                        avg_left = (pixel_left.r + pixel_left.g + pixel_left.b ) ;
+                        if ( avg_left > 128*3  || pixel_left.a==0 ) left = false; else left = true;
+                    }
+
+                    if ( yy > 0) {
+                        int avg_up = 0;
+                        pixel_up = m_image.getPixel( xx, yy-1 );
+                        avg_up = (pixel_up.r + pixel_up.g + pixel_up.b ) ;
+                        if ( avg_up > 128*3  || pixel_up.a==0 ) up = false; else up = true;
+                    }
+
+                    if ( yy > 0 && xx > 0) {
+                        int avg_left_up = 0;
+                        pixel_left_up = m_image.getPixel( xx-1, yy-1 );
+                        avg_left_up = (pixel_left_up.r + pixel_left_up.g + pixel_left_up.b ) ;
+                        if ( avg_left_up > 128*3  || pixel_left_up.a==0 ) left_up = false; else left_up = true;
+                    }
+
+                    int avg = (pixel.r + pixel.g + pixel.b ) ;
+    //1                if (pixel.r == 255 && pixel.g < 200 && pixel.b < 200) {
+    //1                    *val2_ptr =  0x0302;
+                    if ( avg <= 128*3 ) {
+                        *val1a_ptr = 340 + ( rand() % 12 );
+                        while ( *val1a_ptr == 347 || *val1a_ptr == 348 ) *val1a_ptr = 340 + ( rand() % 12 );
+    //                    *val1b_ptr = ( rand() % 12 );
+                        *val1b_ptr = 0;
+
+
+                    } else {
+
+                        *val1a_ptr = 268;
+                        *val1b_ptr = ( rand() % 12 );
+
+                        if (left && up) *val1a_ptr = 271;
+                        else if (left && !left_up) *val1a_ptr = 273;
+                        else if (up && !left_up) *val1a_ptr = 274;
+                        else if (!left && !up && left_up) *val1a_ptr = 272;
+                        else if (left ) *val1a_ptr = 270;
+                        else if (up ) *val1a_ptr = 269;
+
+
+//                        if ( ! border_check(m_image, xx, yy) ) {
+//                            *val2_ptr =  0x0c01;
+//                        }
+                    }
+                } else {
+                    if ( xx > 0) {
+                        int avg_left = 0;
+                        pixel_left = m_image.getPixel( xx-1, yy );
+                        avg_left = (pixel_left.r + pixel_left.g + pixel_left.b ) ;
+                        if ( avg_left > 128*3 || pixel_left.a==0 ) left = false; else left = true;
+                    }
+
+                    if ( yy > 0) {
+                        int avg_up = 0;
+                        pixel_up = m_image.getPixel( xx, yy-1 );
+                        avg_up = (pixel_up.r + pixel_up.g + pixel_up.b ) ;
+                        if ( avg_up > 128*3 || pixel_up.a==0  ) up = false; else up = true;
+                    }
+
+                    if ( yy > 0 && xx > 0) {
+                        int avg_left_up = 0;
+                        pixel_left_up = m_image.getPixel( xx-1, yy-1 );
+                        avg_left_up = (pixel_left_up.r + pixel_left_up.g + pixel_left_up.b ) ;
+                        if ( avg_left_up > 128*3 || pixel_left_up.a==0  ) left_up = false; else left_up = true;
+                    }
+
+                    *val1a_ptr = 268;
+                    *val1b_ptr = ( rand() % 12 );
+
+                    if (left && up) *val1a_ptr = 271;
+                    else if (left && !left_up) *val1a_ptr = 273;
+                    else if (up && !left_up) *val1a_ptr = 274;
+                    else if (!left && !up && left_up) *val1a_ptr = 272;
+                    else if (left ) *val1a_ptr = 270;
+                    else if (up ) *val1a_ptr = 269;
+
+                    if ( border_check(m_image, xx, yy) ) {
+                        *val2_ptr =  0x0c01;
+                    }
+                }
+
+
+//1                } else if ( avg < 128 ) {
+//1                    *val2_ptr =  0x0c01;
 
 ////                if ( pixel.a == 0 ) {
 //                if ( xx > (unsigned int)100 && xx < (unsigned int)(size_x-100) && yy > (unsigned int)100 && yy < (unsigned int)(size_y-100)  ) {
@@ -103,7 +195,7 @@ int picture_bin( unsigned char* bin, long size ) {
 //                    *val1b_ptr = (uint8_t) (  ( rand() % 12 )  );
 //                    *val1a_ptr = (uint16_t) ( 340 + ( rand() % 7 ) );
 //                    *val1b_ptr = (uint8_t) ( 0 );
-                } else {
+//                } else {
 //                    if ( border_check(m_image, xx, yy) ) *val2_ptr =  0x0c01;
 
 ////                    *val2_ptr =  0x0c01;
@@ -131,7 +223,6 @@ int picture_bin( unsigned char* bin, long size ) {
 
 //                    *val1a_ptr = (uint16_t) ( 268 );
 //                    *val1b_ptr = (uint8_t) (  ( rand() % 12 )  );
-                }
             }
 //            printf("\n");
         }
