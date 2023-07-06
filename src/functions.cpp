@@ -14,7 +14,7 @@ bool border_check(sf::Image &m_image, int xx, int yy) {
     for (int y = yy - 5; y <= yy + 5; y++ ) {
         for (int x = xx - 5; x <= xx + 5; x++ ) {
             if ( y>=0 && y<y_max && x>=0 && x<x_max ) {
-                if ( sqrt( (x-xx) * (x-xx) + (y-yy) * (y-yy) ) < 4.0) {
+                if ( sqrt( (x-xx) * (x-xx) + (y-yy) * (y-yy) ) < 2.0) {
                     sf::Color pixel = m_image.getPixel( x, y );
 //                    if (pixel.a != 0 ) return false;
                     int avg = (pixel.r + pixel.g + pixel.b ) / 3;
@@ -27,12 +27,16 @@ bool border_check(sf::Image &m_image, int xx, int yy) {
     return true;
 }
 
-int picture_bin( unsigned char* bin, long size ) {
+//int picture_bin( unsigned char* bin, long size ) {
+int picture_bin( unsigned char* bin, long size, char* filename ) {
+
     uint16_t size_x = *(uint16_t*)(bin + 1);
     uint16_t size_y = *(uint16_t*)(bin + 3);
 
     sf::Image m_image;
-    if ( m_image.loadFromFile("world15.png") ) {
+//    if ( m_image.loadFromFile("world32.png") ) {
+    if ( m_image.loadFromFile(filename) ) {
+
         uint16_t* val1a_ptr;
         uint8_t*  val1b_ptr;
         uint16_t* val2_ptr;
